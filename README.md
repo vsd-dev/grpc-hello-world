@@ -1,7 +1,7 @@
 
-# gRPC Example: Simple Sum Service in C++
+# gRPC Example: Simple Sum and Image Processing Service in C++
 
-This repository contains a basic implementation of a gRPC service and client in C++. The service, `ProcessingServices`, provides a method called `computeSum` that calculates the sum of three floating-point numbers. The client sends three values to the server and receives the sum in response.
+This repository contains a gRPC service and client implementation in C++. The service, `ProcessingServices`, provides two methods: `computeSum` for calculating the sum of three floating-point numbers, and `resizeImage` for resizing an image using OpenCV. The client can specify which operation to perform via command-line arguments.
 
 ## Table of Contents
 
@@ -15,15 +15,18 @@ This repository contains a basic implementation of a gRPC service and client in 
   - [hello.proto](#helloproto)
   - [Server Implementation](#server-implementation)
   - [Client Implementation](#client-implementation)
+- [Usage](#usage)
+  - [Compute Sum](#compute-sum)
+  - [Resize Image](#resize-image)
 - [License](#license)
 
 ## Introduction
 
-This project demonstrates a simple gRPC client-server communication setup using C++. It covers the following:
+This project demonstrates a gRPC client-server communication setup using C++ for multiple operations. It includes:
 
-- Defining a gRPC service and messages in a `.proto` file.
-- Implementing a gRPC server that provides the service.
-- Implementing a gRPC client that calls the service.
+- Defining a gRPC service with methods for computing sums and resizing images.
+- Implementing a gRPC server that provides these services.
+- Implementing a gRPC client that can perform these operations based on command-line arguments.
 
 ## Project Structure
 
@@ -41,10 +44,11 @@ This project demonstrates a simple gRPC client-server communication setup using 
 
 ### Prerequisites
 
-Make sure you have the following installed on your system:
+Ensure you have the following installed on your system:
 
 - CMake 3.16 or higher
 - gRPC and Protocol Buffers libraries
+- OpenCV library for image processing
 - C++ Compiler (g++ or clang)
 - `protoc` (Protocol Buffers compiler)
 
@@ -53,6 +57,7 @@ Make sure you have the following installed on your system:
 - `mkdir -p grpc/build && cd grpc/build`
 - `cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF ..`
 - `make -j8 install`
+
 ### Building the Project
 
 1. **Clone the Repository:**
@@ -92,35 +97,73 @@ Make sure you have the following installed on your system:
 
 2. **Run the Client:**
 
-   Open another terminal in the `build` directory and run:
+   Open another terminal in the `build` directory and run one of the following commands:
+
+   **Compute Sum:**
 
    ```bash
-   ./client
+   ./client --computeSum 3.0 4.0 6.0
    ```
 
-   You should see the output:
+   **Resize Image:**
 
+   ```bash
+   ./client --resizeImage input.jpg resized_output.jpg
    ```
-   Sum of (3, 4, 6) is: 13
-   ```
+
+   In the above command, replace `input.jpg` with your input image file path and `resized_output.jpg` with the desired output image file path.
 
 ## Code Walkthrough
 
 ### hello.proto
 
-This file defines the `ProcessingServices` service with a single RPC method, `computeSum`, that takes a `Point3` message and returns a `Numeric` message.
+The `.proto` file defines the `ProcessingServices` service with two RPC methods:
 
-- **Point3:** Represents a 3D point with `x`, `y`, and `z` coordinates.
-- **Numeric:** Represents a single floating-point value, which is the sum of the coordinates.
-- **computeSum:** An RPC method that computes the sum of the coordinates of a `Point3` message.
+- **`computeSum`**: Accepts three float values in a `Point3` message and returns their sum in a `Numeric` message.
+- **`resizeImage`**: Accepts an image in bytes and returns the resized image in bytes.
 
 ### Server Implementation
 
-The server implements the `ProcessingServices` service defined in the `.proto` file. It listens for incoming client requests on `0.0.0.0:9999`. When the `computeSum` method is called, it calculates the sum of the `x`, `y`, and `z` fields from the `Point3` message and returns the result.
+The server implements both methods defined in the `.proto` file. It listens for incoming client requests on `0.0.0.0:9999`. When the `computeSum` method is called, it calculates the sum of the `x`, `y`, and `z` fields from the `Point3` message. When the `resizeImage` method is called, it resizes the image to 100x100 pixels and returns the resized image.
 
 ### Client Implementation
 
-The client connects to the gRPC server and calls the `computeSum` method. It sends a `Point3` message containing three values (`x`, `y`, and `z`) and receives the computed sum in response. This showcases how easy it is to perform remote procedure calls using gRPC.
+The client uses command-line arguments to specify the operation. It connects to the gRPC server and either:
+
+- Calls the `computeSum` method with three float values.
+- Sends an image file to the `resizeImage` method and saves the resized image.
+
+## Usage
+
+### Compute Sum
+
+To calculate the sum of three numbers, run:
+
+```bash
+./client --computeSum x y z
+```
+
+For example:
+
+```bash
+./client --computeSum 3.0 4.0 6.0
+```
+
+### Resize Image
+
+To resize an image, run:
+
+```bash
+./client --resizeImage input_image_path output_image_path
+```
+
+For example:
+
+```bash
+./client --resizeImage input.jpg resized_output.jpg
+```
+
+Ensure that `input.jpg` is a valid image file in the current directory.
 
 ## License
 

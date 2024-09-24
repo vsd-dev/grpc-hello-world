@@ -1,41 +1,24 @@
 cmake_minimum_required(VERSION 3.16)
-project(myserver)
+project(grpc_image_example)
 
-# Set the compile commands export option
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# Find necessary packages
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
+find_package(OpenCV REQUIRED)
 
-# Add a library target for the proto files
-add_library(protolib proto/hello.proto)
-target_link_libraries(protolib gRPC::grpc++)
-target_include_directories(protolib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+add_library(proto_lib proto/hello.proto)
+target_link_libraries(proto_lib gRPC::grpc++)
+target_include_directories(proto_lib PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
-# Get the location of the gRPC C++ plugin
 get_target_property(grpc_cpp_plugin_location gRPC::grpc_cpp_plugin LOCATION)
+protobuf_generate(TARGET proto_lib LANGUAGE cpp)
+protobuf_generate(TARGET proto_lib LANGUAGE grpc GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}")
 
-# Generate protobuf and gRPC files
-protobuf_generate(
-    TARGET protolib 
-    LANGUAGE cpp
-)
-protobuf_generate(
-    TARGET protolib 
-    LANGUAGE grpc 
-    GENERATE_EXTENSIONS .grpc.pb.h .grpc.pb.cc 
-    PLUGIN "protoc-gen-grpc=${grpc_cpp_plugin_location}"
-)
-
-# Add the server executable and link it with the necessary libraries
+# Server
 add_executable(server src/server.cc)
-target_link_libraries(server protolib gRPC::grpc++)
+target_link_libraries(server proto_lib gRPC::grpc++ ${OpenCV_LIBS})
+target_include_directories(server PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
 
-# Add the client executable and link it with the necessary libraries
-add_executable(client src/client.cpp)  # Add client.cpp to the project
-target_link_libraries(client protolib gRPC::grpc++)  # Link client with protolib and gRPC libraries
-
-# Include the directory where protobuf and gRPC files are generated
-target_include_directories(client PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(server PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+# Client
+add_executable(client src/client.cpp)
+target_link_libraries(client proto_lib gRPC::grpc++ ${OpenCV_LIBS})
+target_include_directories(client PUBLIC ${OpenCV_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
