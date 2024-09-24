@@ -1,0 +1,18 @@
+syntax = "proto3";
+package processing;
+// Define the Point3 message with three floating-point fields
+message Point3 {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+// Define the Numeric message with a single floating-point field
+message Numeric {
+    float value = 1;
+}
+
+// Define the ProcessingServices service with a computeSum method
+service  ProcessingServices {
+    rpc computeSum(Point3) returns (Numeric) {}
+}
