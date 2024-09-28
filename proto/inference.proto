@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package inference;
+
+// The inference service definition.
+service InferenceService {
+  // Sends a batch and receives a classification.
+  rpc PredictBatch (stream Request) returns (stream Response) {}
+
+  // Sends a batch and receives a classification while receive and send on server side happens async.
+  rpc PredictBatchAsync (stream Request) returns (stream Response) {}
+
+  // Shuts down the server.
+  rpc ShutdownServer (Empty) returns (Empty) {}
+}
+
+// The batch request.
+message Request {
+    int32 batch_index = 1;
+    int32 batch_size = 2;
+    int32 image_height = 3;
+    int32 image_width = 4;
+    int32 image_channels = 5;
+    bytes image_data = 6;
+}
+
+// The classification response.
+message Response {
+  int32 batch_index = 1;
+  repeated int32 classification = 2;
+}
+
+// An empty message.
+message Empty {}
