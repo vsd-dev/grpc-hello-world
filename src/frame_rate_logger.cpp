@@ -23,7 +23,7 @@ void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDe
 
     // Debug prints to trace the current state
     // std::cout << "Time duration since last log: " << timeDurationInSeconds << " seconds, Logging frequency: " << loggingFrequency_ << std::endl;
-    // std::cout << "Batch count: " << batchCount_ << ", Frame count: " << frameCount_ << std::endl;
+    // std::cout << "Batc   h count: " << batchCount_ << ", Frame count: " << frameCount_ << std::endl;
 
     // Check if it's time to log based on the logging frequency
     if (timeDurationInSeconds >= loggingFrequency_)
@@ -31,7 +31,6 @@ void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDe
         // Calculate current FPS based on time since startTime
         double fps = static_cast<double>(batchCount_ * batchSize_) / timeDurationInSeconds;
         std::cout << "Current FPS: " << fps << std::endl; // Debug print for FPS
-
         // Accumulate the FPS for averaging
         fpsSum_ += fps;
         frameCount_++;
@@ -40,9 +39,11 @@ void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDe
         if (frameCount_ >= averageCount_)
         {
             double averageFps = fpsSum_ / frameCount_;
-
+            // Calculate Batches Per Second (BPS)
+            double averageBatchesPerSecond = static_cast<double>(totalBatchCount_) / (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count());
             // Create log message with average FPS
-            std::string logMessage = tag + " Average fps: " + std::to_string(averageFps);
+            std::string logMessage = tag + " Average fps: " + std::to_string(averageFps) + 
+                                     ", Average Batches Per Second: " + std::to_string(averageBatchesPerSecond);
             logMessage += " | Total processed batches: " + std::to_string(totalBatchCount_);
             if (logDelay)
             {

@@ -1,0 +1,31 @@
+# Ignore build folders
+build_x86/
+build_aarch64/
+
+# Ignore common build directories and files
+build/
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# Ignore generated files by CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.swp
+*.bak
+
+# Ignore IDE specific files (optional)
+.vscode/
+.idea/
+*.code-workspace
+

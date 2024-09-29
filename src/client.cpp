@@ -23,12 +23,11 @@ ABSL_FLAG(int, batchSize, 48, "The batch size");
 ABSL_FLAG(int, imageWidth, 256, "The image width");
 ABSL_FLAG(int, imageHeight, 256, "The image height");
 ABSL_FLAG(int, imageChannels, 1, "The amount of image channels");
-ABSL_FLAG(int, runtime, 20, "The application runtime (seconds)");
+ABSL_FLAG(int, runBatchCount, 10000, "The number of batches to process");
 ABSL_FLAG(int, loggingFrequency, 1, "The logging frequency (seconds)");
 ABSL_FLAG(std::string, imageFolder, "/home/vishnu/Downloads/GRPC/inference_server/test_Images/test1", "Folder containing the images");
 
 using grpc::Channel;
-using grpc::ChannelArguments;
 using grpc::ClientContext;
 using grpc::Status;
 
@@ -70,15 +69,11 @@ int main(int argc, char **argv)
     // Read flags
     absl::ParseCommandLine(argc, argv);
     std::string serverAddress = absl::GetFlag(FLAGS_serverAddress);
-    if (argc > 1)
-    {
-        serverAddress = std::string(argv[1]) + ":50051"; // Use command-line argument as server address with port
-    }
     int batchSize = absl::GetFlag(FLAGS_batchSize);
     int imageWidth = absl::GetFlag(FLAGS_imageWidth);
     int imageHeight = absl::GetFlag(FLAGS_imageHeight);
     int imageChannels = absl::GetFlag(FLAGS_imageChannels);
-    int runtimeInSeconds = absl::GetFlag(FLAGS_runtime);
+    int runBatchCount = absl::GetFlag(FLAGS_runBatchCount);  // Replace runtimeInSeconds with runBatchCount
     int loggingFrequency = absl::GetFlag(FLAGS_loggingFrequency);
     std::string imageFolder = absl::GetFlag(FLAGS_imageFolder);
 
@@ -98,11 +93,6 @@ int main(int argc, char **argv)
 
     // Print the total size of the concatenated image bytes
     std::cout << "Total size of concatenated image bytes: " << batch_image_bytes.size() << " bytes" << std::endl;
-    // // Create image byte array
-    int size = batchSize * imageWidth * imageHeight * imageChannels;
-    char bytes[size];
-    for (int i = 0; i < size; i++)
-        bytes[i] = ANSWER_TO_EVERYTHING;
 
     inference::Request request;
     request.set_batch_size(batchSize);
@@ -110,13 +100,11 @@ int main(int argc, char **argv)
     request.set_image_width(imageWidth);
     request.set_image_channels(imageChannels);
     request.set_image_data(reinterpret_cast<char *>(batch_image_bytes.data()), batch_image_bytes.size());
-    int currentRuntimeInSeconds = 0;
-    int batchIndex = 0;
 
-    std::chrono::steady_clock::time_point runtimeStart = std::chrono::steady_clock::now();
+    int batchIndex = 0;
     FrameRateLogger frameRateLogger(loggingFrequency, batchSize, 5);
 
-    while (currentRuntimeInSeconds < runtimeInSeconds)
+    while (batchIndex < runBatchCount)
     {
         // Write stream
         request.set_batch_index(batchIndex);
@@ -150,11 +138,6 @@ int main(int argc, char **argv)
 
         // Increase written batch index
         batchIndex++;
-
-        // Calculate current runtime
-        currentRuntimeInSeconds = std::chrono::duration_cast<std::chrono::seconds>(
-                                      std::chrono::steady_clock::now() - runtimeStart)
-                                      .count();
 
         // Run logger
         frameRateLogger.run("Write-read");

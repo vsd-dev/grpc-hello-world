@@ -23,7 +23,7 @@ ABSL_FLAG(int, batchSize, 48, "The batch size");
 ABSL_FLAG(int, imageWidth, 256, "The image width");
 ABSL_FLAG(int, imageHeight, 256, "The image height");
 ABSL_FLAG(int, imageChannels, 1, "The amount of image channels");
-ABSL_FLAG(int, runtime, 10000, "The application runtime (seconds)");
+ABSL_FLAG(int, runBatchCount, 10000, "The number of batches to process");
 ABSL_FLAG(int, loggingFrequency, 1, "The logging frequency (seconds)");
 ABSL_FLAG(std::string, imageFolder, "/home/vishnu/Downloads/GRPC/inference_server/test_Images/test1", "Folder containing the images");
 
@@ -39,13 +39,13 @@ public:
     AsyncClient(std::shared_ptr<Channel> channel)
         : stub_(inference::InferenceService::NewStub(channel)) {}
 
-    void Start(const std::string &imageFolder, int batchSize, int imageWidth, int imageHeight, int imageChannels, int runtimeInSeconds, int loggingFrequency)
+    void Start(const std::string &imageFolder, int batchSize, int imageWidth, int imageHeight, int imageChannels, int runBatchCount, int loggingFrequency)
     {
         batchSize_ = batchSize;
         imageWidth_ = imageWidth;
         imageHeight_ = imageHeight;
         imageChannels_ = imageChannels;
-        runtimeInSeconds_ = runtimeInSeconds;
+        runBatchCount_ = runBatchCount; // Replace runtimeInSeconds with runBatchCount
 
         // Initialize FrameRateLogger with loggingFrequency, batchSize, and buffer size
         frameRateLogger_ = std::make_unique<FrameRateLogger>(loggingFrequency, batchSize, 5); // Check averageCount parameter as needed
@@ -94,7 +94,7 @@ private:
     std::vector<unsigned char> batch_image_bytes_;
     std::thread processing_thread_;
     std::unique_ptr<FrameRateLogger> frameRateLogger_; // Add a pointer to the FrameRateLogger
-    int batchSize_, imageWidth_, imageHeight_, imageChannels_, runtimeInSeconds_;
+    int batchSize_, imageWidth_, imageHeight_, imageChannels_, runBatchCount_; // Use runBatchCount_
     std::atomic<int> batchIndex_{0};
     std::atomic<bool> write_in_progress_{false}; // Track ongoing write operation
     std::atomic<bool> read_in_progress_{false};  // Track ongoing read operation
@@ -153,7 +153,6 @@ private:
             }
             else if (got_tag == (void *)2)
             { // Write done
-                // std::cout << "Write operation completed." << std::endl;
                 write_in_progress_ = false; // Mark write as complete
                 if (!read_in_progress_)
                 {
@@ -162,16 +161,15 @@ private:
             }
             else if (got_tag == (void *)3)
             { // Read done
-                // std::cout << "Read operation completed." << std::endl;
                 read_in_progress_ = false; // Mark read as complete
                 // Call FrameRateLogger to log the current write-read cycle
                 OnReadDone(); // Process the read response
                 batchIndex_++;
-                if (batchIndex_ < runtimeInSeconds_ && !write_in_progress_)
+                if (batchIndex_ < runBatchCount_ && !write_in_progress_)
                 {
                     InitiateWrite(); // Continue writing next request
                 }
-                else if (batchIndex_ >= runtimeInSeconds_)
+                else if (batchIndex_ >= runBatchCount_)
                 {
                     std::cout << "No more requests to send. Calling WritesDone." << std::endl;
                     stream_->WritesDone((void *)4); // Complete writing
@@ -202,7 +200,6 @@ private:
     {
         if (!write_in_progress_)
         {
-            // std::cout << "Initiating write operation." << std::endl;
             request_.set_batch_index(batchIndex_); // Set batch index before sending request
             write_in_progress_ = true;
             stream_->Write(request_, (void *)2);
@@ -218,7 +215,6 @@ private:
     {
         if (!read_in_progress_)
         {
-            // std::cout << "Initiating read operation." << std::endl;
             read_in_progress_ = true;
             stream_->Read(&response_, (void *)3);
         }
@@ -256,12 +252,12 @@ int main(int argc, char **argv)
     int imageWidth = absl::GetFlag(FLAGS_imageWidth);
     int imageHeight = absl::GetFlag(FLAGS_imageHeight);
     int imageChannels = absl::GetFlag(FLAGS_imageChannels);
-    int runtimeInSeconds = absl::GetFlag(FLAGS_runtime);
+    int runBatchCount = absl::GetFlag(FLAGS_runBatchCount); // Replaced runtimeInSeconds with runBatchCount
     int loggingFrequency = absl::GetFlag(FLAGS_loggingFrequency);
     std::string imageFolder = absl::GetFlag(FLAGS_imageFolder);
 
     AsyncClient client(grpc::CreateChannel(serverAddress, grpc::InsecureChannelCredentials()));
-    client.Start(imageFolder, batchSize, imageWidth, imageHeight, imageChannels, runtimeInSeconds, loggingFrequency);
+    client.Start(imageFolder, batchSize, imageWidth, imageHeight, imageChannels, runBatchCount, loggingFrequency);
 
     return 0;
 }
