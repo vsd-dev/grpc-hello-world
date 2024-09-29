@@ -32,13 +32,15 @@ public:
     void run(const std::string &tag, int writeReadDelay = 0, bool logDelay = false);
 
 private:
-    double loggingFrequency_;        // Frequency in seconds to log FPS
-    int batchSize_;                  // Number of items per batch
-    int batchCount_ = 0;             // Number of batches processed
-    int averageCount_;               // Number of counts over which to average FPS
-    int frameCount_ = 0;             // Counter to track number of logged frames
-    double fpsSum_ = 0.0;            // Sum of FPS values for averaging
-    std::chrono::steady_clock::time_point startTime; // Start time for FPS calculation
+    double loggingFrequency_;                            // Frequency in seconds to log FPS
+    int batchSize_;                                      // Number of items per batch
+    int batchCount_ = 0;                                 // Number of batches processed
+    int totalBatchCount_ = 0;                            // Total number of batches processed
+    int averageCount_;                                   // Number of counts over which to average FPS
+    int frameCount_ = 0;                                 // Counter to track number of logged frames
+    double fpsSum_ = 0.0;                                // Sum of FPS values for averaging
+    std::chrono::steady_clock::time_point startTime;     // Start time for FPS calculation
+    std::chrono::steady_clock::time_point lastLogTime;   // Last time the FPS was logged
 };
 
 #endif // FRAME_RATE_LOGGER_H

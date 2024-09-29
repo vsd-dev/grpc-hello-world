@@ -1,51 +1,3 @@
-// #include <iostream>
-// #include <chrono>
-// #include <string>
-// #include "frame_rate_logger.h"
-
-// FrameRateLogger::FrameRateLogger(double loggingFrequency, int batchSize)
-//     : loggingFrequency_(loggingFrequency), batchSize_(batchSize), startTime(std::chrono::steady_clock::now()) {}
-
-// FrameRateLogger::~FrameRateLogger() {}
-
-// void FrameRateLogger::run(std::string tag, int writeReadDelay, bool logDelay) 
-// {
-//     batchCount_++;
-
-//     // Calculate time duration in seconds since the last start time
-//     auto now = std::chrono::steady_clock::now();
-//     double timeDurationInSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() / 1000.0;
-
-//     // Check if it's time to log based on the logging frequency
-//     if (timeDurationInSeconds >= loggingFrequency_)
-//     {
-//         // Calculate FPS
-//         double fps = static_cast<double>(batchCount_ * batchSize_) / timeDurationInSeconds;
-
-//         // Create log message
-//         std::string logMessage = tag + " fps: " + std::to_string(fps);
-//         if (logDelay)
-//         {
-//             logMessage += " (batch delay: " + std::to_string(writeReadDelay) + ")";
-//         }
-
-//         // Print the log message
-//         std::cout << logMessage << std::endl;
-
-//         // Reset the counters
-//         batchCount_ = 0;
-
-//         // Adjust startTime to account for the logging interval
-//         startTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::milliseconds(static_cast<int>(loggingFrequency_ * 1000)));
-
-//         // In case the logging frequency was missed by more than one interval
-//         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() < 0) {
-//             startTime = now;
-//         }
-//     }
-// }
-
-
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -53,25 +5,32 @@
 
 // Constructor
 FrameRateLogger::FrameRateLogger(double loggingFrequency, int batchSize, int averageCount)
-    : loggingFrequency_(loggingFrequency), batchSize_(batchSize), averageCount_(averageCount), startTime(std::chrono::steady_clock::now()) {}
-
-// Destructor
-FrameRateLogger::~FrameRateLogger() {}
+    : loggingFrequency_(loggingFrequency), batchSize_(batchSize), averageCount_(averageCount), startTime(std::chrono::steady_clock::now()), lastLogTime(std::chrono::steady_clock::now())
+{
+    std::cout << "FrameRateLogger initialized with loggingFrequency: " << loggingFrequency_ << ", batchSize: " << batchSize_ << ", averageCount: " << averageCount_ << std::endl;
+}
 
 void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDelay)
 {
-    // Increment the batch count
-    batchCount_++;
+    // std::cout << "Inside frame logger" << std::endl; // Debug print
 
-    // Calculate time duration in seconds since the last start time
+    // Increment both the interval-specific and total batch counts
+    batchCount_++;
+    totalBatchCount_++;
+    // Calculate time duration in seconds since the last log time
     auto now = std::chrono::steady_clock::now();
-    double timeDurationInSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime).count() / 1000.0;
+    double timeDurationInSeconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastLogTime).count() / 1000.0;
+
+    // Debug prints to trace the current state
+    // std::cout << "Time duration since last log: " << timeDurationInSeconds << " seconds, Logging frequency: " << loggingFrequency_ << std::endl;
+    // std::cout << "Batch count: " << batchCount_ << ", Frame count: " << frameCount_ << std::endl;
 
     // Check if it's time to log based on the logging frequency
     if (timeDurationInSeconds >= loggingFrequency_)
     {
-        // Calculate current FPS
+        // Calculate current FPS based on time since startTime
         double fps = static_cast<double>(batchCount_ * batchSize_) / timeDurationInSeconds;
+        std::cout << "Current FPS: " << fps << std::endl; // Debug print for FPS
 
         // Accumulate the FPS for averaging
         fpsSum_ += fps;
@@ -84,6 +43,7 @@ void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDe
 
             // Create log message with average FPS
             std::string logMessage = tag + " Average fps: " + std::to_string(averageFps);
+            logMessage += " | Total processed batches: " + std::to_string(totalBatchCount_);
             if (logDelay)
             {
                 logMessage += " (batch delay: " + std::to_string(writeReadDelay) + ")";
@@ -97,8 +57,13 @@ void FrameRateLogger::run(const std::string &tag, int writeReadDelay, bool logDe
             frameCount_ = 0;
         }
 
-        // Reset batch count and start time for the next interval
+        // Update last log time
+        lastLogTime = now;
         batchCount_ = 0;
-        startTime = std::chrono::steady_clock::now();
     }
+}
+FrameRateLogger::~FrameRateLogger()
+{
+    // Print the total number of batches processed when the object is destroyed
+    std::cout << "Total processed batches (final): " << totalBatchCount_ << std::endl;
 }

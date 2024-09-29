@@ -101,5 +101,21 @@ target_link_libraries(client
 
 target_include_directories(client PUBLIC ${OpenCV_INCLUDE_DIRS} ${proto_output_dir})
 
+
+
+# Client async executable
+add_executable(client_async "src/client_async.cpp" "src/frame_rate_logger.h" "src/frame_rate_logger.cpp")
+target_link_libraries(client_async
+  inference_grpc_proto
+  absl::flags
+  absl::flags_parse
+  ${_REFLECTION}
+  ${_GRPC_GRPCPP}
+  ${_PROTOBUF_LIBPROTOBUF}
+  ${OpenCV_LIBS}
+)
+
+target_include_directories(client_async PUBLIC ${OpenCV_INCLUDE_DIRS} ${proto_output_dir})
+
 # Debug information
 message(STATUS "Proto output directory: ${proto_output_dir}")

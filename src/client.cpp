@@ -18,7 +18,7 @@
 
 #include <opencv2/opencv.hpp>
 
-ABSL_FLAG(std::string, serverAddress, "10.1.12.124:50051", "Server address");
+ABSL_FLAG(std::string, serverAddress, "10.0.0.91:50051", "Server address");
 ABSL_FLAG(int, batchSize, 48, "The batch size");
 ABSL_FLAG(int, imageWidth, 256, "The image width");
 ABSL_FLAG(int, imageHeight, 256, "The image height");

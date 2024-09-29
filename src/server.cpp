@@ -77,9 +77,9 @@ void writeStream(ServerReaderWriter<inference::Response, inference::Request> *st
             std::cerr << "Error: Received empty image data!" << std::endl;
             continue;
         }
-
+        // int64_t receivedBytes = request.image_data().size();
+        // std::cout << "Bytes received in current request: " << receivedBytes << " bytes" << std::endl;
         inference::Response response;
-        response.set_batch_index(request.batch_index());
         for (int i = 0; i < request.batch_size(); ++i)
         {
             response.add_classification(ANSWER_TO_EVERYTHING);
@@ -111,9 +111,9 @@ public:
                 std::cerr << "Error: Received empty image data!" << std::endl;
                 continue;
             }
-
+            // int64_t receivedBytes = request.image_data().size();
+            // std::cout << "Bytes received in current request: " << receivedBytes << " bytes" << std::endl;
             inference::Response response;
-            response.set_batch_index(request.batch_index());
             for (int i = 0; i < request.batch_size(); ++i)
             {
                 response.add_classification(ANSWER_TO_EVERYTHING);
